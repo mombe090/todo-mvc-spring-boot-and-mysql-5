@@ -2,9 +2,13 @@ package com.mombesoft.todospringapi.controllers;
 
 import com.mombesoft.todospringapi.entities.Todo;
 import com.mombesoft.todospringapi.repositories.TodoRepository;
+import com.mombesoft.todospringapi.service.TodoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.lang.reflect.Array;
 import java.util.List;
 
 @CrossOrigin(origins = "http://localhost:4000")
@@ -12,37 +16,58 @@ import java.util.List;
 @RequestMapping("todos")
 public class TodoController {
     @Autowired
-    TodoRepository todoRepository;
+    TodoService todoService;
+
     @GetMapping
-    List<Todo> index() {
-        return  this.todoRepository.findAll();
+     public ResponseEntity index() {
+        List<Todo> todos = this.todoService.getTodos();
+
+        if (!todos.isEmpty()) {
+            return new  ResponseEntity<>(todos, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(new EmptyClass(), HttpStatus.OK);
+        }
     }
 
     @PostMapping
-    Todo store(@RequestBody Todo todo) {
-       return this.todoRepository.save(todo);
+    ResponseEntity store(@RequestBody Todo todo) {
+        Todo saved = this.todoService.saveOrUpdate(todo);
+        if (saved != null) {
+            return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        } else {
+            return new ResponseEntity<>(new EmptyClass(), HttpStatus.CONFLICT);
+        }
     }
 
     @GetMapping("{id}")
-    Todo show(@PathVariable int id) {
-        return  this.todoRepository.findById(id);
+    ResponseEntity show(@PathVariable int id) {
+        Todo retrieved = this.todoService.getTodo(id);
+        if (retrieved != null) {
+            return new ResponseEntity<>(retrieved, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(new EmptyClass(), HttpStatus.NOT_FOUND);
+        }
     }
 
     @PutMapping("{id}")
-    Todo update(@RequestBody Todo todo) {
-        return  this.todoRepository.save(todo);
+    ResponseEntity update(@RequestBody Todo todo) {
+        Todo retrieved = this.todoService.saveOrUpdate(todo);
+        if (retrieved != null) {
+            return new ResponseEntity<>(retrieved, HttpStatus.CREATED);
+        } else {
+            return new ResponseEntity<>(new EmptyClass(), HttpStatus.NOT_FOUND);
+        }
     }
 
     @DeleteMapping("{id}")
-    Todo destroy(@PathVariable int id) {
-       Todo todo = todoRepository.findById(id);
-        this.todoRepository.delete(todo);
-        return  todo;
+    String  destroy(@PathVariable int id) {
+        this.todoService.delete(id);
+        return  "Deleted";
     }
 
-    @DeleteMapping("all")
+    /*@DeleteMapping("all")
     String destroyAll() {
         this.todoRepository.deleteAll();
         return  "Toutes les donnée ont été supprimé avec succès.";
-    }
+    }*/
 }
